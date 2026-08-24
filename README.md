@@ -1,82 +1,49 @@
-# Cockpit application to manage Tailscale
+# Cockpit Tailscale
 
 A [Cockpit](https://cockpit-project.org) application to manage
-[Tailscale](https://tailscale.com) on the local machine: connection state,
-login flow and client settings, plus an overview of the reachable peers.
+[Tailscale](https://tailscale.com) on the local machine.
 
 ![Screenshot](./docs/screenshot.png)
 
 ## Features
 
-* View the connection state of this machine and its tailnet
 * Connect / disconnect from the tailnet, including the login flow
-* Manage client settings (`tailscale set`):
+* Full client configuration (`tailscale set`) in one dialog:
+
+![Configuration dialog](./docs/screenshot2.png)
+
   Tailscale SSH, Accept DNS, Accept subnet routes, Shields up,
-  exit node selection (use and advertise), subnet routes advertisement,
-  hostname override and automatic updates
-* Inspect reachable peers with search, sorting and expandable details
-  (addresses, connection type, traffic)
-* Capability badges per peer: SSH, exit node offers, advertised subnets
-  and key-expiry state
+  exit node selection and advertisement, hostname override and
+  automatic updates.
+* Peers table with search, sorting and expandable details, plus
+  capability badges per peer: SSH, exit node offers, advertised
+  subnets and key expiry (days remaining, or disabled).
 
 Requires **Tailscale >= 1.34** (for `tailscale set`) and Cockpit >= 137.
 
 ## Development
 
-### Requirements
-
-* Node.js >= 20 and npm >= 9
-* A running `tailscaled` for the page to show live data
+Requirements: Node.js >= 20 and npm >= 9.
 
 ```bash
 $ npm install
 ```
 
-### Build
+| Command | Description |
+|---|---|
+| `make dev` / `make watch` | development build / with watch mode |
+| `make build` | production build into `dist/` |
+| `make check` | lint + typecheck + unit tests |
+| `make devel-install` | symlink `dist/` into `~/.local/share/cockpit/tailscale` |
 
-Development build with watch mode:
+After linking, reload Cockpit (log out and back in the first time).
+`make devel-uninstall` removes the link again.
 
-```bash
-$ npm run dev        # or: npm run watch
-```
-
-Production build (writes to `dist/`, including `bundle.js.LEGAL.txt`):
-
-```bash
-$ npm run build
-```
-
-### Quality checks
+### Packaging
 
 ```bash
-$ npm run lint       # ESLint
-$ npm run typecheck  # TypeScript strict mode
-$ npm run test:unit  # node:test unit tests
-```
-
-The service layer (`src/services/tailscale.ts`) wraps the `tailscale`
-CLI; all spawns use argument arrays and elevated writes request
-superuser through Cockpit's permission system.
-
-### Install into Cockpit
-
-Copy `dist/` to `/usr/local/share/cockpit/tailscale` (root) or
-`~/.local/share/cockpit/tailscale` (user session), or create a symlink
-for development:
-
-```bash
-$ npm run link      # symlink ~/.local/share/cockpit/tailscale -> dist/
-$ npm run unlink    # remove it again
-```
-
-`linkusr` / `unlinkusr` do the same under `/usr/local/share/cockpit`
-using `sudo`. Cockpit caches page assets, so log out and back in after
-linking for the first time.
-
-### RPM package
-
-```bash
-$ npm run rpm
+$ make dist    # release source tarball
+$ make rpm     # binary RPM (requires rpmbuild, e.g. on Fedora/RHEL)
 ```
 
 ## License
