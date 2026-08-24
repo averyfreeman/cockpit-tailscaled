@@ -1,149 +1,141 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-import { TailscaleBackendState, TailscalePeer, TailscaleStatus, TailscaleUp, TailscaleVersion } from './types';
-import { Icon } from '@patternfly/react-core';
-import ExclamationCircleIcon from '@patternfly/react-icons/dist/esm/icons/exclamation-circle-icon';
-import CheckCircleIcon from '@patternfly/react-icons/dist/esm/icons/check-circle-icon';
-import InfoCircleIcon from '@patternfly/react-icons/dist/esm/icons/info-circle-icon';
 import {
-    ExpandableRowContent,
-    Table, Caption, Thead, Tbody, Tr, Th, Td,
-    SortByDirection,
-} from '@patternfly/react-table';
+    Alert,
+    Button,
+    Modal,
+    ModalVariant,
+    Page,
+    PageSection,
+    Spinner,
+    Stack,
+    StackItem,
+    Text,
+    TextContent,
+    TextVariants,
+} from '@patternfly/react-core';
+import CogIcon from '@patternfly/react-icons/dist/esm/icons/cog-icon';
 
-type ApplicationProps = {
-}
+import { PeersTable } from './components/peers-table';
+import { SettingsForm } from './components/settings-form';
+import { StatusPanel } from './components/status-panel';
+import { useLocalPreference } from './hooks/useLocalPreference';
+import { useSuperuser } from './hooks/useSuperuser';
+import { useTailscaleData } from './hooks/useTailscaleData';
 
-type ApplicationState = {
-    Status: TailscaleStatus
-    Version: TailscaleVersion
-}
+export function Application(): React.JSX.Element {
+    const { status, prefs, version, versionSupported, loading, error, refresh } = useTailscaleData();
+    const superuserAllowed = useSuperuser();
+    const [configOpen, setConfigOpen] = useState(false);
+    const [showSubnets, setShowSubnets] = useLocalPreference('tailscale.showSubnets', true);
 
-export class Application extends React.Component<ApplicationProps, ApplicationState> {
-    state: ApplicationState = {
-        Status: null,
-        Version: null
-    }
+    /* Mutations need superuser rights and a tailscale client that
+     * understands `tailscale set` (>= 1.34). */
+    const canOperate = superuserAllowed === true && versionSupported;
+    const ready = status !== null && prefs !== null;
 
-    constructor(props: ApplicationProps) {
-        super(props);
+    return (
+        <Page>
+            <PageSection>
+                <Stack hasGutter>
 
-        cockpit
-            .spawn(['tailscale', 'version', '--json'])
-            .done(content => {
-                const version: TailscaleVersion = JSON.parse(content)
-                this.setState(state => ({ Version: version }));
-            });
+                <StackItem>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <TextContent>
+                            <Text component={TextVariants.h1}>Tailscale</Text>
+                            <Text component={TextVariants.p}>
+                                Mesh VPN status of this machine.
+                                {version && ` Client version: ${version}.`}
+                            </Text>
+                        </TextContent>
+                        <Button
+                            variant="plain"
+                            aria-label="Configure Tailscale"
+                            title="Configure Tailscale"
+                            icon={<CogIcon />}
+                            isDisabled={!ready}
+                            onClick={() => setConfigOpen(true)} />
+                    </div>
+                </StackItem>
 
-        cockpit
-            .spawn(['tailscale', 'status', '--json'])
-            .done(content => {
-                const status: TailscaleStatus = JSON.parse(content)
-                this.setState(state => ({ Status: status }));
-            });
-    }
+                {error &&
+                    <StackItem>
+                        <Alert
+                            variant="danger"
+                            title="Failed to communicate with tailscaled"
+                            actionLinks={
+                                <Button variant="link" onClick={() => void refresh()}>
+                                    Retry
+                                </Button>}>
+                            {error}
+                        </Alert>
+                    </StackItem>}
 
-    render() {
+                {!error && version !== null && !versionSupported &&
+                    <StackItem>
+                        <Alert variant="warning" title="Unsupported Tailscale version">
+                            This interface requires Tailscale 1.34 or newer;
+                            found {version ?? 'unknown'}. Please upgrade the client.
+                        </Alert>
+                    </StackItem>}
 
-        function isNotSharee(peer: TailscalePeer): peer is TailscalePeer {
-            return peer.DNSName !== "";     // ShareeNode doesn't work?
-        }
+                {superuserAllowed === false &&
+                    <StackItem>
+                        <Alert variant="info" title="Limited mode">
+                            Administrative privileges are not active; settings are read-only.
+                            Use the privilege elevation button in the Cockpit shell to enable changes.
+                        </Alert>
+                    </StackItem>}
 
-        return (
-            <>
-                {
-                    this.state.Status != null
-                        ? <div>
-                            <Table
-                                aria-label="Tailscale peers"
-                                variant='compact' borders={false}>
-                                <Caption>Tailscale peers</Caption>
-                                <Thead>
-                                    <Tr>
-                                        <Th></Th>
-                                        <Th>IP</Th>
-                                        <Th>Hostname</Th>
-                                        <Th>Network</Th>
-                                        <Th>Tags</Th>
-                                        <Th>State</Th>
-                                        <Th>Exit node</Th>
-                                        <Th>OS</Th>
-                                        <Th>Traffic</Th>
-                                    </Tr>
-                                </Thead>
-                                <Tbody>
-                                    {this.state.Status.Self.Self = true}
-                                    <Peer {...this.state.Status.Self} />
-                                    {
-                                        Object.values(this.state.Status.Peer)
-                                            .filter(isNotSharee)
-                                            .map(peer => {
-                                                return <Peer {...peer} />
-                                            }
-                                            )
-                                    }
-                                </Tbody>
-                            </Table>
-
-                            <div>Tailscale {this.state.Version.majorMinorPatch}</div>
+                {loading && status === null && !error &&
+                    <StackItem>
+                        <div className="pf-v5-u-text-align-center">
+                            <Spinner size="xl" aria-label="Loading Tailscale status" />
                         </div>
+                    </StackItem>}
 
-                        : <p>Loading...</p>
-                }
-            </>
-        );
-    }
-}
+                {ready &&
+                    <StackItem>
+                        <StatusPanel
+                            status={status}
+                            prefs={prefs}
+                            canOperate={canOperate}
+                            onRefresh={refresh} />
+                    </StackItem>}
 
+                {ready &&
+                    <StackItem>
+                        <PeersTable
+                            self={status.Self}
+                            peers={status.Peer}
+                            selfSshEnabled={prefs.sshEnabled}
+                            showSubnets={showSubnets} />
+                    </StackItem>}
 
-class Peer extends React.Component<TailscalePeer> {
-    render() {
+                </Stack>
+            </PageSection>
 
-        const name = this.props.DNSName.split('.');
-        const hostName = name[0];
-        const network = name[1] + '.' + 'ts.net';
-
-        var tags = "-"
-        if (this.props.Tags) {
-            const mapped_items = this.props.Tags?.map(t => { return t.split(":")[1] })
-            tags = mapped_items.join(', ')
-        }
-
-        return (
-            <Tr>
-                <Td>
-                    {this.props.Online
-                        ? <Icon status="success"><CheckCircleIcon /></Icon>
-                        : <Icon status="danger"><ExclamationCircleIcon /></Icon>
-                    }</Td>
-                <Td>{this.props.TailscaleIPs[0]}</Td>
-                <Td>{hostName}</Td>
-                <Td>{network}</Td>
-                <Td>{
-                    tags
-                }
-                </Td>
-                <Td>{this.props.Self
-                    ? "Self"
-                    : this.props.Active
-                        ? this.props.CurAddr != ""
-                            ? "Direct"
-                            : "Relay: " + this.props.Relay
-                        : this.props.Online
-                            ? "Idle"
-                            : "-"
-                }</Td>
-                <Td>{this.props.ExitNode
-                    ? "Current"
-                    : this.props.ExitNodeOption
-                        ? "Yes"
-                        : "-"
-                }</Td>
-                <Td>{this.props.OS}</Td>
-                <Td>{this.props.Self
-                        ? "-"
-                        : "" + this.props.TxBytes + " / " + this.props.RxBytes
-                }</Td>
-            </Tr>);
-    }
+            {ready && (
+                <Modal
+                    variant={ModalVariant.medium}
+                    title="Tailscale configuration"
+                    description="Changes are applied immediately with 'tailscale set'."
+                    isOpen={configOpen}
+                    onClose={() => setConfigOpen(false)}>
+                    <SettingsForm
+                        prefs={prefs}
+                        peers={status.Peer}
+                        canOperate={canOperate}
+                        onRefresh={refresh}
+                        showSubnets={showSubnets}
+                        onShowSubnetsChange={setShowSubnets} />
+                    <div style={{ textAlign: 'right', marginTop: '1rem' }}>
+                        <Button variant="secondary" onClick={() => setConfigOpen(false)}>
+                            Close
+                        </Button>
+                    </div>
+                </Modal>
+            )}
+        </Page>
+    );
 }
