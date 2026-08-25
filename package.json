@@ -2,10 +2,10 @@
   "name": "tailscale",
   "description": "Tailscale application for Cockpit",
   "main": "dist/index.html",
-  "repository": "git@github.com:spotsnel/tailscale-cockpit.git",
-  "author": "Gerard Braad <me@gbraad.nl>",
+  "repository": "https://github.com/Nicolazroyale/cockpit-tailscaled.git",
+  "author": "Nicolazroyale",
   "version": "0.1.0",
-  "license": "LGPL-2.1",
+  "license": "LGPL-2.1-or-later",
   "scripts": {
     "build": "node esbuild.config.mjs",
     "watch": "node esbuild.config.mjs --watch",

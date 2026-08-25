@@ -278,3 +278,16 @@ export function keyExpiryText(expiry: string | null | undefined, now: Date = new
         return 'Expired';
     return `in ${formatDuration(diffMs)}`;
 }
+
+/**
+ * Whole days until the node key expires, rounded up; negative once
+ * expired. Returns null when expiry is disabled or unparsable.
+ */
+export function keyExpiryDays(expiry: string | null | undefined, now: Date = new Date()): number | null {
+    if (expiry === null || expiry === undefined || expiry === '')
+        return null;
+    const diffMs = new Date(expiry).getTime() - now.getTime();
+    if (Number.isNaN(diffMs))
+        return null;
+    return Math.ceil(diffMs / 86_400_000);
+}

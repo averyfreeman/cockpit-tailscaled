@@ -12,6 +12,7 @@ import {
     formatDuration,
     isValidHostname,
     isVersionSupported,
+    keyExpiryDays,
     keyExpiryText,
     mapPrefs,
     parseSubnetRoutes,
@@ -247,4 +248,19 @@ test('peerSubnetRoutes returns [] for plain nodes and missing data', () => {
     const noIps = fakePeer({});
     delete (noIps as { AllowedIPs?: string[] }).AllowedIPs;
     assert.deepEqual(peerSubnetRoutes(noIps), []);
+});
+
+/* ------------------------------------------------------------------ */
+
+test('keyExpiryDays counts whole days until expiry, rounded up', () => {
+    const now = new Date('2026-08-24T12:00:00Z');
+    assert.equal(keyExpiryDays(null, now), null);
+    assert.equal(keyExpiryDays('', now), null);
+    assert.equal(keyExpiryDays('not-a-date', now), null);
+    /* 2.5 days -> rounds up to 3 */
+    assert.equal(keyExpiryDays('2026-08-27T00:00:00Z', now), 3);
+    /* exactly one day */
+    assert.equal(keyExpiryDays('2026-08-25T12:00:00Z', now), 1);
+    /* already expired -> negative */
+    assert.equal(keyExpiryDays('2026-08-20T00:00:00Z', now), -4);
 });

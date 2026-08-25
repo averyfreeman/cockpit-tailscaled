@@ -1,18 +1,11 @@
-*~
-*.retry
-*.tar.xz
-*.rpm
+# build artifacts
 node_modules/
 dist/
-/*.spec
-/.vagrant
-Test*FAIL*
-/bots
-test/common/
-test/images/
-*.pot
-POTFILES*
-tmp/
-/po/LINGUAS
-/tools
 .tmp-unit/
+/*.spec
+*.tar.xz
+*.rpm
+
+# editor / temp files
+*~
+tmp/

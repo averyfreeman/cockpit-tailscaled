@@ -33,6 +33,7 @@ import { TailscalePeer } from '../types';
 import {
     formatBytes,
     isUsablePeer,
+    keyExpiryDays,
     peerSubnetRoutes,
 } from '../services/tailscale';
 
@@ -77,7 +78,7 @@ export function PeersTable({ self, peers, selfSshEnabled, showSubnets }: PeersTa
                 <Caption>Tailscale peers</Caption>
                 <Thead>
                     <Tr>
-                        <Th />
+                        <Th screenReaderText="Peer details" />
                         <Th sort={{ sortBy, onSort, columnIndex: 1 }}>Machine</Th>
                         <Th>Addresses</Th>
                         <Th>Operating system</Th>
@@ -207,9 +208,24 @@ function featureBadges(peer: TailscalePeer, selfSshEnabled: boolean, showSubnets
     if (showSubnets && routes.length > 0)
         badges.push(<Label key="subnets" color="gold" isCompact>Subnet</Label>);
 
-    /* Key expiry disabled -> indicator; active expiry stays silent */
-    if (!peer.KeyExpiry)
+    /* Key expiry: indicator when disabled, days remaining otherwise */
+    if (!peer.KeyExpiry) {
         badges.push(<Label key="expiry-disabled" color="grey" isCompact>Expiry disabled</Label>);
+    } else {
+        const days = keyExpiryDays(peer.KeyExpiry);
+        if (days !== null) {
+            if (days < 0)
+                badges.push(<Label key="expiry" color="red" isCompact>Expired</Label>);
+            else
+                badges.push(
+                    <Label
+                        key="expiry"
+                        color={days <= 30 ? 'orange' : 'blue'}
+                        isCompact>
+                        Expires in {days}d
+                    </Label>);
+        }
+    }
 
     if (badges.length === 0)
         return '-';

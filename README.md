@@ -50,5 +50,6 @@ $ make rpm     # binary RPM (requires rpmbuild, e.g. on Fedora/RHEL)
 
 LGPL-2.1-or-later, see [LICENSE](./LICENSE).
 
-Based on the original cockpit-tailscale work by
-[Gerard Braad (@gbraad)](https://github.com/gbraad).
+Based on the repository
+[gbraad/cockpit-tailscale](https://github.com/gbraad/cockpit-tailscale)
+by [Gerard Braad (@gbraad)](https://github.com/gbraad).

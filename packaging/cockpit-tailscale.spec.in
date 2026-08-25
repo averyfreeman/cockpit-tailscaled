@@ -4,8 +4,8 @@ Release: 1%{?dist}
 Summary: Cockpit Tailscale
 License: LGPLv2+
 
-Source0: https://github.com/spotsnel/tailscale-cockpit/releases/download/%{version}/%{name}-%{version}.tar.xz
-Source1: https://github.com/spotsnel/tailscale-cockpit/releases/download/%{version}/%{name}-node-%{version}.tar.xz
+Source0: https://github.com/Nicolazroyale/cockpit-tailscaled/releases/download/%{version}/%{name}-%{version}.tar.xz
+Source1: https://github.com/Nicolazroyale/cockpit-tailscaled/releases/download/%{version}/%{name}-node-%{version}.tar.xz
 BuildArch: noarch
 ExclusiveArch: %{nodejs_arches} noarch
 BuildRequires: nodejs
@@ -32,7 +32,7 @@ rm -rf dist
 %endif
 
 %build
-ESLINT=0 NODE_ENV=production make
+NODE_ENV=production make
 
 %install
 %make_install PREFIX=/usr
@@ -42,9 +42,6 @@ find %{buildroot}%{_datadir}/cockpit/ -name '*.map' | xargs --no-run-if-empty rm
 
 %check
 appstream-util validate-relax --nonet %{buildroot}/%{_datadir}/metainfo/*
-
-# this can't be meaningfully tested during package build; tests happen through
-# FMF (see plans/all.fmf) during package gating
 
 %files
 %doc README.md
