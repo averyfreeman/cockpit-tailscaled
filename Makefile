@@ -1,8 +1,8 @@
 PACKAGE_NAME := $(shell node -p "require('./package.json').name")
 VERSION := $(shell node -p "require('./package.json').version")
-RPM_NAME := cockpit-$(PACKAGE_NAME)
+RPM_NAME := cockpit-tailscaled
 SPEC := $(RPM_NAME).spec
-APPSTREAM_FILE := org.cockpit-project.$(PACKAGE_NAME).metainfo.xml
+APPSTREAM_FILE := org.cockpit-project.tailscaled.metainfo.xml
 
 PREFIX ?= /usr/local
 DESTDIR ?=

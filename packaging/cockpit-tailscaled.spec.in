@@ -1,4 +1,4 @@
-Name: cockpit-tailscale
+Name: cockpit-tailscaled
 Version: %{VERSION}
 Release: 1%{?dist}
 Summary: Cockpit Tailscale
